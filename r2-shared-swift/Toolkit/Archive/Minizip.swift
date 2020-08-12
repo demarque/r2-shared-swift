@@ -175,7 +175,7 @@ private extension MinizipArchive {
             return false
         }
         
-        // FIXME: For now we never use unzseek64 because it is broken (see unit tests).
+        // FIXME: https://github.com/readium/r2-shared-swift/issues/98
         if true || entry.isCompressed {
             // Deflate is stream-based, and can't be used for random access. Therefore, if the file
             // is compressed we need to read and discard the content from the start until we reach
