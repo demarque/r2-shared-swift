@@ -185,9 +185,22 @@ public struct MediaType: Equatable, Hashable {
         type == "audio"
     }
     
+    /// Returns whether this media type is of a video clip.
+    public var isVideo: Bool {
+        return type == "video"
+    }
+    
     /// Returns whether this media type is of a Readium Web Publication Manifest.
     public var isRWPM: Bool {
         matchesAny(.readiumWebPubManifest, .readiumAudiobookManifest, .divinaManifest)
+    }
+    
+    /// Returns whether this media type is of a Readium Web Publication profile.
+    public var isReadiumWebPubProfile: Bool {
+        matchesAny(
+            .readiumWebPub, .readiumWebPubManifest, .readiumAudiobook, .readiumAudiobookManifest,
+            .lcpProtectedAudiobook, .divina, .divinaManifest, .lcpProtectedPDF
+        )
     }
     
     /// Returns whether this media type is of a package protected with LCP.
@@ -259,6 +272,11 @@ public struct MediaType: Equatable, Hashable {
     public static let xml = MediaType("application/xml")!
     public static let zab = MediaType("application/x.readium.zab+zip")!  // non-existent
     public static let zip = MediaType("application/zip")!
+    
+    static let readiumPositions = MediaType("application/vnd.readium.position-list+json")!
+    static let readiumContentProtection = MediaType("application/vnd.readium.content-protection+json")!
+    static let readiumRightsCopy = MediaType("application/vnd.readium.rights.copy+json")!
+    static let readiumRightsPrint = MediaType("application/vnd.readium.rights.print+json")!
 
     /// `text/html` != `text/html;charset=utf-8` with strict equality comparison, which is most
     /// likely not the desired result. Instead, you can use `matches()` to check if any of the media

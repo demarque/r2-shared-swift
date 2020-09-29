@@ -12,7 +12,7 @@
 import Foundation
 
 /// Acts as a proxy to an actual resource by handling read access.
-protocol Resource {
+public protocol Resource {
 
     /// The link from which the resource was retrieved.
     ///
@@ -24,22 +24,22 @@ protocol Resource {
     ///
     /// This value must be treated as a hint, as it might not reflect the actual bytes length. To
     /// get the real length, you need to read the whole resource.
-    var length: Result<UInt64, ResourceError> { get }
+    var length: ResourceResult<UInt64> { get }
 
     /// Reads the bytes at the given range.
     ///
-    /// When `range` is null, the whole content is returned. Out-of-range indexes are clamped to
+    /// When `range` is `nil`, the whole content is returned. Out-of-range indexes are clamped to
     /// the available length automatically.
-    func read(range: Range<UInt64>?) -> Result<Data, ResourceError>
+    func read(range: Range<UInt64>?) -> ResourceResult<Data>
     
     /// Closes any opened file handles.
     func close()
 
 }
 
-extension Resource {
+public extension Resource {
 
-    func read() -> Result<Data, ResourceError> {
+    func read() -> ResourceResult<Data> {
         return read(range: nil)
     }
     
@@ -47,16 +47,32 @@ extension Resource {
     ///
     /// If `encoding` is null, then it is parsed from the `charset` parameter of `link.type`, or
     /// falls back on UTF-8.
-    func readAsString(encoding: String.Encoding? = nil) -> Result<String, ResourceError> {
+    func readAsString(encoding: String.Encoding? = nil) -> ResourceResult<String> {
         return read().map {
             let encoding = encoding ?? link.mediaType?.encoding ?? .utf8
             return String(data: $0, encoding: encoding) ?? ""
         }
     }
     
+    /// Reads the full content as a JSON object.
+    func readAsJSON(options: JSONSerialization.ReadingOptions = []) -> ResourceResult<[String: Any]> {
+        return read().tryMap {
+            guard let json = try JSONSerialization.jsonObject(with: $0, options: options) as? [String: Any] else {
+                throw JSONError.parsing([String: Any].self)
+            }
+            return json
+        }
+    }
+    
 }
 
-enum ResourceError: Swift.Error {
+/// Errors occurring while accessing a resource.
+public enum ResourceError: Swift.Error {
+    
+    /// Equivalent to a 400 HTTP error.
+    ///
+    /// This can be used for templated HREFs, when the provided arguments are invalid.
+    case badRequest(Error)
     
     /// Equivalent to a 404 HTTP error.
     case notFound
@@ -76,6 +92,27 @@ enum ResourceError: Swift.Error {
     /// For any other error, such as HTTP 500.
     case other(Error)
     
+    /// HTTP status code for this `ResourceError`.
+    public var httpStatusCode: Int {
+        switch self {
+        case .badRequest:
+            return 400
+        case .notFound:
+            return 404
+        case .forbidden:
+            return 403
+        case .unavailable:
+            return 503
+        case .other:
+            return 500
+        }
+    }
+    
+    public static func wrap(_ error: Error) -> ResourceError {
+        return error as? ResourceError
+            ?? .other(error)
+    }
+    
 }
 
 /// Implements the transformation of a Resource. It can be used, for example, to decrypt,
@@ -83,79 +120,35 @@ enum ResourceError: Swift.Error {
 /// an HTML document, pre-process – e.g. before indexing a publication's content, etc.
 ///
 /// If the transformation doesn't apply, simply return resource unchanged.
-typealias ResourceTransformer = (Resource) -> Resource
+public typealias ResourceTransformer = (Resource) -> Resource
 
-/// Creates a Resource that will always return the given `error`.
-final class FailureResource: Resource {
+public typealias ResourceResult<Success> = Result<Success, ResourceError>
 
-    private let error: ResourceError
-    
-    init(link: Link, error: ResourceError) {
-        self.link = link
-        self.error = error
-    }
-    
-    let link: Link
-    
-    var length: Result<UInt64, ResourceError> { .failure(error) }
+public extension Result where Failure == ResourceError {
 
-    func read(range: Range<UInt64>?) -> Result<Data, ResourceError> {
-        return .failure(error)
-    }
-    
-    func close() {}
-
-}
-
-/// Creates a `Resource` serving raw data.
-final class DataResource: Resource {
-
-    private let data: Data
-    private var dataLength: UInt64 { UInt64(data.count) }
-    
-    /// Creates a `Resource` serving an array of bytes.
-    init(link: Link, data: Data) {
-        self.link = link
-        self.data = data
-    }
-    
-    /// Creates a `Resource` serving a string encoded as UTF-8.
-    init(link: Link, string: String) {
-        self.link = link
-        // It's safe to force-unwrap when using a unicode encoding.
-        // https://www.objc.io/blog/2018/02/13/string-to-data-and-back/
-        self.data = string.data(using: .utf8)!
-    }
-    
-    let link: Link
-
-    var length: Result<UInt64, ResourceError> { .success(dataLength) }
-
-    func read(range: Range<UInt64>?) -> Result<Data, ResourceError> {
-        if let range = range?.clamped(to: 0..<dataLength) {
-            return .success(data[range])
-        } else {
-            return .success(data)
+    init(block: () throws -> Success) {
+        do {
+            self = .success(try block())
+        } catch {
+            self = .failure(.wrap(error))
         }
     }
-    
-    func close() {}
-    
-}
-
-extension Result where Failure == ResourceError {
     
     /// Maps the result with the given `transform`
     ///
     /// If the `transform` throws an `Error`, it is wrapped in a failure with `Resource.Error.Other`.
-    func tryMap<NewSuccess>(_ transform: (Success) throws -> NewSuccess) -> Result<NewSuccess, ResourceError> {
+    func tryMap<NewSuccess>(_ transform: (Success) throws -> NewSuccess) -> ResourceResult<NewSuccess> {
         return flatMap {
             do {
                 return .success(try transform($0))
             } catch {
-                return .failure(.other(error))
+                return .failure(.wrap(error))
             }
         }
+    }
+    
+    func tryFlatMap<NewSuccess>(_ transform: (Success) throws -> ResourceResult<NewSuccess>) -> ResourceResult<NewSuccess> {
+        return tryMap(transform).flatMap { $0 }
     }
     
 }
