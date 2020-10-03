@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		57470F7E20ED0D1A000CDCA3 /* DownloadSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57470F7D20ED0D1A000CDCA3 /* DownloadSession.swift */; };
-		CA038E5025222B0900489729 /* ControlFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA038E4F25222B0900489729 /* ControlFlow.swift */; };
 		CA038E2F2520D3F700489729 /* PDFKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA038E2E2520D3F700489729 /* PDFKit.swift */; };
+		CA038E5025222B0900489729 /* ControlFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA038E4F25222B0900489729 /* ControlFlow.swift */; };
 		CA0D3C0F2518E213005B47BC /* PDFDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0D3C0E2518E213005B47BC /* PDFDocument.swift */; };
 		CA0D3C112518E2F6005B47BC /* PDFOutlineNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0D3C102518E2F6005B47BC /* PDFOutlineNode.swift */; };
 		CA0D3C132518E604005B47BC /* CGPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0D3C122518E604005B47BC /* CGPDF.swift */; };
@@ -205,8 +205,8 @@
 		0318F709221DD4CA004E5114 /* Locator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Locator.swift; sourceTree = "<group>"; };
 		57470F7D20ED0D1A000CDCA3 /* DownloadSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DownloadSession.swift; sourceTree = "<group>"; };
 		AEF39DF220E3895200A560F3 /* UserProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProperties.swift; sourceTree = "<group>"; };
-		CA038E4F25222B0900489729 /* ControlFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlFlow.swift; sourceTree = "<group>"; };
 		CA038E2E2520D3F700489729 /* PDFKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFKit.swift; sourceTree = "<group>"; };
+		CA038E4F25222B0900489729 /* ControlFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlFlow.swift; sourceTree = "<group>"; };
 		CA0D3C0E2518E213005B47BC /* PDFDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFDocument.swift; sourceTree = "<group>"; };
 		CA0D3C102518E2F6005B47BC /* PDFOutlineNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFOutlineNode.swift; sourceTree = "<group>"; };
 		CA0D3C122518E604005B47BC /* CGPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGPDF.swift; sourceTree = "<group>"; };
@@ -1019,7 +1019,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0940;
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1200;
 				ORGANIZATIONNAME = Readium;
 				TargetAttributes = {
 					CA6161E921FB257700D2CFE3 = {
@@ -1374,6 +1374,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -1437,6 +1438,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
