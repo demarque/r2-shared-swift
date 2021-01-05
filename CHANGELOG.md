@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.0-beta.1]
+
+### Added
+
+* `PublicationAsset` is a new protocol which can be used to open a publication from various medium, such as a file, a remote URL or a custom source.
+  * `File` was replaced by `FileAsset`, which implements `PublicationAsset`.
+
 ### Changed
 
 * `Format` got merged into `MediaType`, to simplify the media type APIs.
@@ -63,3 +70,4 @@ All notable changes to this project will be documented in this file.
 [unreleased]: https://github.com/readium/r2-shared-swift/compare/master...HEAD
 [2.0.0-alpha.1]: https://github.com/readium/r2-shared-swift/compare/1.4.3...2.0.0-alpha.1
 [2.0.0-alpha.2]: https://github.com/readium/r2-shared-swift/compare/2.0.0-alpha.1...2.0.0-alpha.2
+[2.0.0-beta.1]: https://github.com/readium/r2-shared-swift/compare/2.0.0-alpha.2...2.0.0-beta.1
