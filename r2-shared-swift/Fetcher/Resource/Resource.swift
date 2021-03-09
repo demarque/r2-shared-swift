@@ -1,12 +1,7 @@
 //
-//  Resource.swift
-//  r2-shared-swift
-//
-//  Created by Mickaël Menu on 10/05/2020.
-//
 //  Copyright 2020 Readium Foundation. All rights reserved.
-//  Use of this source code is governed by a BSD-style license which is detailed
-//  in the LICENSE file present in the project repository where this source code is maintained.
+//  Use of this source code is governed by the BSD-style license
+//  available in the top-level LICENSE file of the project.
 //
 
 import Foundation
@@ -38,8 +33,19 @@ public protocol Resource {
     ///
     /// When `range` is `nil`, the whole content is returned. Out-of-range indexes are clamped to
     /// the available length automatically.
+    ///
+    /// Types implementing Resource MUST override either this function or `read(range:consume:completion:)`.
     func read(range: Range<UInt64>?) -> ResourceResult<Data>
-    
+
+    /// Reads the bytes at the given range asynchronously.
+    ///
+    /// The `consume` callback will be called with each chunk of read data. Callers are responsible to accumulate the
+    /// total data.
+    /// The returned `Cancellable` object can be used to cancel the reading task if not needed anymore.
+    ///
+    /// Types implementing Resource MUST override either this function or `read(range:)`.
+    func read(range: Range<UInt64>?, consume: @escaping (Data) -> Void, completion: @escaping (ResourceResult<Void>) -> Void) -> Cancellable
+
     /// Closes any opened file handles.
     func close()
 
@@ -50,7 +56,52 @@ public extension Resource {
     func read() -> ResourceResult<Data> {
         return read(range: nil)
     }
-    
+
+    /// Default implementation of `read(range:)` using the asynchronous `read(range:consume:completion:)` provided by
+    /// implementing types.
+    func read(range: Range<UInt64>?) -> ResourceResult<Data> {
+        var result: ResourceResult<Data>!
+        let semaphore = DispatchSemaphore(value: 0)
+        _ = read(range: range) {
+            result = $0
+            semaphore.signal()
+        }
+        _ = semaphore.wait(timeout: .distantFuture)
+        return result
+    }
+
+    /// Default implementation of `read(range:consume:completion:)` using the synchronous `read(range:)` provided by
+    /// implementing types.
+    func read(range: Range<UInt64>?, consume: @escaping (Data) -> (), completion: @escaping (ResourceResult<()>) -> ()) -> Cancellable {
+        let cancellable = CancellableObject()
+        DispatchQueue.global(qos: .background).async {
+            switch read(range: range) {
+            case .success(let data):
+                if !cancellable.isCancelled {
+                    consume(data)
+                    completion(.success(()))
+                }
+            case .failure(let error):
+                if !cancellable.isCancelled {
+                    completion(.failure(error))
+                }
+            }
+        }
+        return cancellable
+    }
+
+    /// Reads the bytes at the given range asynchronously.
+    ///
+    /// The returned `Cancellable` object can be used to cancel the reading task if not needed anymore.
+    func read(range: Range<UInt64>?, completion: @escaping (ResourceResult<Data>) -> Void) -> Cancellable {
+        var data = Data()
+        return read(
+            range: range,
+            consume: { chunk in data.append(chunk) },
+            completion: { result in completion(result.map { data }) }
+        )
+    }
+
     /// Reads the full content as a `String`.
     ///
     /// If `encoding` is null, then it is parsed from the `charset` parameter of `link.type`, or
@@ -95,7 +146,12 @@ public enum ResourceError: LocalizedError {
     ///
     /// Used when the source can't be reached, e.g. no Internet connection, or an issue with the
     /// file system. Usually this is a temporary error.
-    case unavailable
+    case unavailable(Error?)
+
+    /// The request was cancelled.
+    ///
+    /// For example, an HTTP request was cancelled by the caller.
+    case cancelled
     
     /// For any other error, such as HTTP 500.
     case other(Error)
@@ -111,6 +167,8 @@ public enum ResourceError: LocalizedError {
             return 403
         case .unavailable:
             return 503
+        case .cancelled:
+            return 499  // nginx's Client Closed Request
         case .other:
             return 500
         }
@@ -131,6 +189,8 @@ public enum ResourceError: LocalizedError {
             return R2SharedLocalizedString("Publication.ResourceError.forbidden")
         case .unavailable:
             return R2SharedLocalizedString("Publication.ResourceError.unavailable")
+        case .cancelled:
+            return R2SharedLocalizedString("Publication.ResourceError.cancelled")
         case .other:
             return R2SharedLocalizedString("Publication.ResourceError.other")
         }
